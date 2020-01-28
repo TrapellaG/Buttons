@@ -28,6 +28,7 @@ public class ButtonFragment extends Fragment
     // TODO: Customize parameters
     private int mColumnCount = 2;
     private OnListFragmentInteractionListener mListener;
+    MyButtonRecyclerViewAdapter adapter;
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -35,6 +36,8 @@ public class ButtonFragment extends Fragment
      */
 
     List<Button>buttons;
+
+    RecyclerView recyclerView;
 
 
     public ButtonFragment()
@@ -57,9 +60,7 @@ public class ButtonFragment extends Fragment
     public void onCreate(Bundle savedInstanceState)
     {
         buttons = new ArrayList<>();
-        buttons.add(new Button("#FF0000", 32));
-        buttons.add(new Button("#00FF00", 7));
-        buttons.add(new Button("#0000FF", 1345));
+
 
         super.onCreate(savedInstanceState);
 
@@ -74,13 +75,14 @@ public class ButtonFragment extends Fragment
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState)
     {
-        View view = inflater.inflate(R.layout.fragment_button_list, container, false);
+        final View view = inflater.inflate(R.layout.fragment_button_list, container, false);
 
         // Set the adapter
         if (view instanceof RecyclerView)
         {
             Context context = view.getContext();
-            RecyclerView recyclerView = (RecyclerView) view;
+            recyclerView = (RecyclerView) view;
+
             if (mColumnCount <= 1)
             {
                 recyclerView.setLayoutManager(new LinearLayoutManager(context));
@@ -88,8 +90,26 @@ public class ButtonFragment extends Fragment
                 {
                 recyclerView.setLayoutManager(new GridLayoutManager(context, mColumnCount));
             }
-            recyclerView.setAdapter(new MyButtonRecyclerViewAdapter(buttons, mListener));
+
+            ButtonAccess.ButtonsSnap(new ButtonAccess.ButtonsCallback()
+            {
+                @Override
+                public void onCallback(List<Button> buttons, int status)
+                {
+                    if (status==ButtonAccess.Constants.STATUS_OK)
+                    {
+                        for(Button button:buttons)
+                        {
+                            adapter.addNewButton(button);
+                        }
+                        recyclerView.getAdapter().notifyDataSetChanged();
+                    }
+                }
+            } );
+
         }
+        adapter = new MyButtonRecyclerViewAdapter(buttons, mListener);
+        recyclerView.setAdapter(adapter);
         return view;
     }
 
@@ -101,7 +121,8 @@ public class ButtonFragment extends Fragment
         if (context instanceof OnListFragmentInteractionListener)
         {
             mListener = (OnListFragmentInteractionListener) context;
-        } else {
+        } else
+        {
             throw new RuntimeException(context.toString()
                     + " must implement OnListFragmentInteractionListener");
         }
